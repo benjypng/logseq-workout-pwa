@@ -26,8 +26,8 @@ export function SetCard({ session, dispatch }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1">
+      <div className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">
             Weight (kg)
           </span>
@@ -47,7 +47,7 @@ export function SetCard({ session, dispatch }: Props) {
             className="h-14 rounded-md border border-border bg-surface-raised px-3 text-center text-2xl font-bold outline-none focus:border-accent"
           />
         </label>
-        <label className="flex flex-1 flex-col gap-1">
+        <label className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">
             Reps done
           </span>
