@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #14161a;
+  --color-surface: #1d2026;
+  --color-surface-raised: #262a32;
+  --color-foreground: #eceef1;
+  --color-muted: #8b919c;
+  --color-faint: #565c66;
+  --color-border: #2e333c;
+  --color-accent: #f0a03c;
+  --color-accent-foreground: #17130c;
+  --color-positive: #4cc476;
+  --color-danger: #e2543f;
+
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100dvh;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family:
+      ui-rounded, -apple-system, "SF Pro Rounded", "Segoe UI", Roboto,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  button {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  #root {
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
