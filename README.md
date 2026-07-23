@@ -19,6 +19,28 @@ CLI; the browser only ever talks HTTP to it.
 |---|---|
 | ![Rest countdown with next-up preview](screenshots/rest.png) | ![Completion summary with sync status](screenshots/complete.png) |
 
+## What lands in Logseq
+
+Each finished session is appended to the today journal page as a single
+`#Workout`-tagged block (the tag is applied as a real DB tag, not inline
+text). Sample output:
+
+```markdown
+**Thursday — legs and shoulders**
+| Exercise | Reps | Sets | Rest | Weight | Reps done |
+|----------|------|------|------|--------|-----------|
+| Romanian deadlift | 8–12 | 3 | 0s | 12kg, 16kg, 16kg | 12, 12, 12 |
+| Goblet squat | 8–12 | 3 | 90s | 10kg | 8, 12, 10 |
+| Dumbbell shoulder press | 8–12 | 3 | 0s | 18kg | 8, 8, 12 |
+| Lateral raise | 12–20 | 3 | 75s | 5kg | 8, 8, 10 |
+| Preacher curl | 8 | 3 | 0s | 7.5kg | 8, 8, 8 |
+| Tricep extension | 8 | 3 | 75s | 7.5kg | 8, 8, 8 |
+```
+
+Reps done are listed per set; the Weight column collapses to a single value
+when every set used the same weight, otherwise it lists each set's weight.
+A `0s` rest marks the first half of a superset pair.
+
 ## Editing the workout plan
 
 The whole weekly plan lives in **`src/plan.ts`** — it is the only file to
