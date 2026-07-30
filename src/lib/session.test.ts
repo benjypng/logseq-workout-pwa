@@ -13,9 +13,21 @@ export const TEST_PLAN: DayPlan = {
   weekday: 1,
   title: 'Monday — chest and triceps',
   groups: [
-    [{ name: 'Smith incline press', reps: '8–12', sets: 4, restSec: 90 }],
-    [{ name: 'Flat dumbbell press', reps: '8–12', sets: 4, restSec: 90 }],
-    [{ name: 'Tricep pushdown', reps: '10–15', sets: 3, restSec: 75 }],
+    {
+      exercises: [
+        { name: 'Smith incline press', reps: '8–12', sets: 4, restSec: 90 },
+      ],
+    },
+    {
+      exercises: [
+        { name: 'Flat dumbbell press', reps: '8–12', sets: 4, restSec: 90 },
+      ],
+    },
+    {
+      exercises: [
+        { name: 'Tricep pushdown', reps: '10–15', sets: 3, restSec: 75 },
+      ],
+    },
   ],
 }
 
@@ -23,11 +35,17 @@ const SUPERSET_PLAN: DayPlan = {
   weekday: 1,
   title: 'Monday — priority',
   groups: [
-    [
-      { name: 'Incline press', reps: '8–12', sets: 2, restSec: 0 },
-      { name: 'Dumbbell row', reps: '8–12', sets: 2, restSec: 90 },
-    ],
-    [{ name: 'Tricep pushdown', reps: '10–15', sets: 2, restSec: 75 }],
+    {
+      exercises: [
+        { name: 'Incline press', reps: '8–12', sets: 2, restSec: 0 },
+        { name: 'Dumbbell row', reps: '8–12', sets: 2, restSec: 90 },
+      ],
+    },
+    {
+      exercises: [
+        { name: 'Tricep pushdown', reps: '10–15', sets: 2, restSec: 75 },
+      ],
+    },
   ],
 }
 

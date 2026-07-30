@@ -49,7 +49,9 @@ export function HomeView({ onStart }: Props) {
 
   const flatIndexOf = (group: number, member: number): number =>
     plan
-      ? plan.groups.slice(0, group).reduce((n, g) => n + g.length, 0) + member
+      ? plan.groups
+          .slice(0, group)
+          .reduce((n, g) => n + g.exercises.length, 0) + member
       : 0
 
   return (
@@ -103,14 +105,16 @@ export function HomeView({ onStart }: Props) {
             {plan.groups.map((group, g) =>
               isSuperset(group) ? (
                 <div
-                  key={group[0].name}
+                  key={group.exercises[0].name}
                   className="flex flex-col gap-2 rounded-xl border border-accent/40 p-2"
                 >
                   <div className="px-2 text-xs font-semibold uppercase tracking-wide text-accent">
-                    Superset · rest {group[group.length - 1].restSec}s after
+                    Superset
+                    {group.muscles ? ` · ${group.muscles}` : ''} · rest{' '}
+                    {group.exercises[group.exercises.length - 1].restSec}s after
                     each round
                   </div>
-                  {group.map((e, m) => (
+                  {group.exercises.map((e, m) => (
                     <ExerciseRow
                       key={e.name}
                       exercise={e}
@@ -119,11 +123,20 @@ export function HomeView({ onStart }: Props) {
                   ))}
                 </div>
               ) : (
-                <ExerciseRow
-                  key={group[0].name}
-                  exercise={group[0]}
-                  onStart={() => start(flatIndexOf(g, 0))}
-                />
+                <div
+                  key={group.exercises[0].name}
+                  className="flex flex-col gap-1"
+                >
+                  {group.muscles && (
+                    <div className="px-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                      {group.muscles}
+                    </div>
+                  )}
+                  <ExerciseRow
+                    exercise={group.exercises[0]}
+                    onStart={() => start(flatIndexOf(g, 0))}
+                  />
+                </div>
               ),
             )}
           </div>

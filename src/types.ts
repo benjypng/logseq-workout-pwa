@@ -5,7 +5,10 @@ export interface PlannedExercise {
   restSec: number
 }
 
-export type ExerciseGroup = PlannedExercise[]
+export interface ExerciseGroup {
+  muscles?: string
+  exercises: PlannedExercise[]
+}
 
 export interface DayPlan {
   weekday: number
@@ -14,7 +17,7 @@ export interface DayPlan {
 }
 
 export function isSuperset(group: ExerciseGroup): boolean {
-  return group.length > 1
+  return group.exercises.length > 1
 }
 
 export interface SetLog {

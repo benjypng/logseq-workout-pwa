@@ -18,7 +18,7 @@ export function createSession(
   prefillWeights: Record<string, string> = {},
 ): Session {
   const exercises: SessionExercise[] = plan.groups.flatMap((group, g) =>
-    group.map((e) => ({
+    group.exercises.map((e) => ({
       ...e,
       group: g,
       logs: Array.from({ length: e.sets }, (_, i) => ({
