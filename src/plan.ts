@@ -3,14 +3,14 @@ import type { DayPlan } from './types'
 export const WEEKLY_PLAN: DayPlan[] = [
   {
     weekday: 1,
-    title: 'Monday — priority day A (upper chest, lats, arms, side delts)',
+    title: 'Monday — gym, upper body',
     groups: [
       {
         exercises: [
           {
-            name: 'Incline dumbbell press (30 degrees)',
+            name: 'Incline bench press (smith or dumbbell)',
             reps: '8–12',
-            sets: 2,
+            sets: 3,
             restSec: 150,
           },
         ],
@@ -18,9 +18,9 @@ export const WEEKLY_PLAN: DayPlan[] = [
       {
         exercises: [
           {
-            name: 'V-bar pulldown',
+            name: 'Lat pulldown (wide grip)',
             reps: '8–12',
-            sets: 2,
+            sets: 3,
             restSec: 150,
           },
         ],
@@ -28,28 +28,34 @@ export const WEEKLY_PLAN: DayPlan[] = [
       {
         exercises: [
           {
-            name: 'Facing-away cable curl',
+            name: 'Shoulder press',
+            reps: '8–12',
+            sets: 3,
+            restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Horizontal lat row (v-bar)',
+            reps: '8–12',
+            sets: 3,
+            restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Face-away bicep curl',
             reps: '10–12',
             sets: 2,
             restSec: 90,
           },
-        ],
-      },
-      {
-        exercises: [
           {
-            name: 'Overhead cable extension (horizontal bar)',
-            reps: '10–15',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Lateral raise',
-            reps: '12–20',
+            name: 'Overhead cable tricep extension',
+            reps: '10–12',
             sets: 2,
             restSec: 90,
           },
@@ -59,14 +65,24 @@ export const WEEKLY_PLAN: DayPlan[] = [
   },
   {
     weekday: 2,
-    title: 'Tuesday — legs plus lat stimulus (only leg session)',
+    title: 'Tuesday — home, upper body',
     groups: [
       {
         exercises: [
           {
-            name: 'Leg press',
-            reps: '8–12',
+            name: 'Scapular pull-ups',
+            reps: '5–8',
             sets: 2,
+            restSec: 90,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Rows (inverted, harder angle as you progress)',
+            reps: '8–12',
+            sets: 3,
             restSec: 150,
           },
         ],
@@ -74,9 +90,9 @@ export const WEEKLY_PLAN: DayPlan[] = [
       {
         exercises: [
           {
-            name: 'Romanian deadlift',
+            name: 'Dips',
             reps: '8–12',
-            sets: 2,
+            sets: 3,
             restSec: 150,
           },
         ],
@@ -84,10 +100,82 @@ export const WEEKLY_PLAN: DayPlan[] = [
       {
         exercises: [
           {
-            name: 'Wide-grip overhand lat pulldown',
-            reps: '8–12',
+            name: 'Push-ups',
+            reps: '8–15',
             sets: 2,
+            restSec: 90,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Hammer curl',
+            reps: '10–12',
+            sets: 2,
+            restSec: 90,
+          },
+          {
+            name: 'Overhead dumbbell tricep extension',
+            reps: '10–15',
+            sets: 2,
+            restSec: 90,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    weekday: 3,
+    title: 'Wednesday — gym, legs and back',
+    groups: [
+      {
+        exercises: [
+          {
+            name: 'Squat (smith or goblet)',
+            reps: '8–12',
+            sets: 3,
             restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Bulgarian split squat (long stride, torso forward)',
+            reps: '8–12 per leg',
+            sets: 3,
+            restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Leg extension',
+            reps: '10–15',
+            sets: 2,
+            restSec: 90,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Straight-arm cable pulldown',
+            reps: '10–15',
+            sets: 2,
+            restSec: 90,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Cable lateral raise',
+            reps: '12–20',
+            sets: 2,
+            restSec: 90,
           },
         ],
       },
@@ -104,120 +192,60 @@ export const WEEKLY_PLAN: DayPlan[] = [
     ],
   },
   {
-    weekday: 3,
-    title: 'Wednesday — priority day B (upper chest, lats, arms, delts)',
-    groups: [
-      {
-        exercises: [
-          {
-            name: 'Smith incline press (30 degrees)',
-            reps: '8–12',
-            sets: 2,
-            restSec: 150,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Horizontal V-bar row',
-            reps: '8–12',
-            sets: 2,
-            restSec: 150,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Incline dumbbell curl',
-            reps: '10–12',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Overhead dumbbell extension',
-            reps: '10–15',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Lateral raise',
-            reps: '12–20',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Face pull',
-            reps: '12–20',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-    ],
-  },
-  {
     weekday: 4,
-    title: 'Thursday — arms, delts and detail',
+    title: 'Thursday — gym, upper body',
     groups: [
       {
         exercises: [
           {
-            name: 'Cable pushdown',
-            reps: '10–15',
-            sets: 2,
-            restSec: 90,
+            name: 'Incline bench press (smith or dumbbell)',
+            reps: '8–12',
+            sets: 3,
+            restSec: 150,
           },
         ],
       },
       {
         exercises: [
           {
-            name: 'Isolated hammer curl',
+            name: 'Lat pulldown (wide grip)',
+            reps: '8–12',
+            sets: 3,
+            restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Shoulder press',
+            reps: '8–12',
+            sets: 3,
+            restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Horizontal lat row (v-bar)',
+            reps: '8–12',
+            sets: 3,
+            restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Face-away bicep curl',
             reps: '10–12',
             sets: 2,
             restSec: 90,
           },
-        ],
-      },
-      {
-        exercises: [
           {
-            name: 'Low-to-high cable flye',
-            reps: '10–15',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Lateral raise',
-            reps: '12–20',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Rear delt flye',
-            reps: '12–20',
+            name: 'Overhead cable tricep extension',
+            reps: '10–12',
             sets: 2,
             restSec: 90,
           },
@@ -227,14 +255,24 @@ export const WEEKLY_PLAN: DayPlan[] = [
   },
   {
     weekday: 5,
-    title: 'Friday — priority day C (upper chest, lats, arms, side delts)',
+    title: 'Friday — home, upper body',
     groups: [
       {
         exercises: [
           {
-            name: 'Incline dumbbell press (30 degrees)',
-            reps: '8–12',
+            name: 'Scapular pull-ups',
+            reps: '5–8',
             sets: 2,
+            restSec: 90,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Rows (inverted, harder angle as you progress)',
+            reps: '8–12',
+            sets: 3,
             restSec: 150,
           },
         ],
@@ -242,10 +280,20 @@ export const WEEKLY_PLAN: DayPlan[] = [
       {
         exercises: [
           {
-            name: 'V-bar pulldown',
+            name: 'Dips',
             reps: '8–12',
-            sets: 2,
+            sets: 3,
             restSec: 150,
+          },
+        ],
+      },
+      {
+        exercises: [
+          {
+            name: 'Push-ups',
+            reps: '8–15',
+            sets: 2,
+            restSec: 90,
           },
         ],
       },
@@ -257,23 +305,9 @@ export const WEEKLY_PLAN: DayPlan[] = [
             sets: 2,
             restSec: 90,
           },
-        ],
-      },
-      {
-        exercises: [
           {
-            name: 'Overhead cable extension (horizontal bar)',
+            name: 'Overhead dumbbell tricep extension',
             reps: '10–15',
-            sets: 2,
-            restSec: 90,
-          },
-        ],
-      },
-      {
-        exercises: [
-          {
-            name: 'Lateral raise',
-            reps: '12–20',
             sets: 2,
             restSec: 90,
           },
