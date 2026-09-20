@@ -1,26 +1,54 @@
 import { useState } from 'react'
 
-import { planForWeekday, WEEKLY_PLAN } from '../plan'
-import type { DayPlan } from '../types'
+import { PLANS, type WorkoutKind } from '../plan'
+import { type DayPlan, isSuperset, type PlannedExercise } from '../types'
 import { unlockAudio } from '../utils/cues'
-
-const DAY_LABELS = ['M', 'T', 'W', 'T', 'F']
 
 interface Props {
   onStart: (plan: DayPlan, startExercise: number) => void
 }
 
+function ExerciseRow({
+  exercise,
+  onStart,
+}: {
+  exercise: PlannedExercise
+  onStart: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onStart}
+      className="flex w-full items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-left active:bg-surface-raised"
+    >
+      <div>
+        <div className="font-medium">{exercise.name}</div>
+        <div className="text-xs text-muted">
+          {exercise.sets} × {exercise.reps} reps
+          {exercise.restSec > 0 ? ` · rest ${exercise.restSec}s` : ''}
+        </div>
+      </div>
+      <span className="text-xs font-semibold text-accent">Start here</span>
+    </button>
+  )
+}
+
 export function HomeView({ onStart }: Props) {
-  const todayWeekday = new Date().getDay()
-  const isRestDay = planForWeekday(todayWeekday) === null
-  const [weekday, setWeekday] = useState(isRestDay ? 1 : todayWeekday)
-  const plan = planForWeekday(weekday)
+  const [kind, setKind] = useState<WorkoutKind | null>(null)
+  const plan = kind ? PLANS[kind] : null
 
   const start = (exercise: number) => {
     if (!plan) return
     unlockAudio()
     onStart(plan, exercise)
   }
+
+  const flatIndexOf = (group: number, member: number): number =>
+    plan
+      ? plan.groups
+          .slice(0, group)
+          .reduce((n, g) => n + g.exercises.length, 0) + member
+      : 0
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-5 py-6">
@@ -35,61 +63,54 @@ export function HomeView({ onStart }: Props) {
         </span>
       </header>
 
-      {isRestDay && (
-        <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted">
-          Rest day today. Pick a day below to preview or log anyway.
-        </div>
-      )}
-
       <div className="flex gap-2">
-        {WEEKLY_PLAN.map((p, i) => (
+        {(Object.keys(PLANS) as WorkoutKind[]).map((k) => (
           <button
-            key={p.weekday}
+            key={k}
             type="button"
-            onClick={() => setWeekday(p.weekday)}
-            className={`flex h-11 flex-1 items-center justify-center rounded-md text-sm font-semibold ${
-              p.weekday === weekday
+            onClick={() => setKind(k)}
+            className={`h-14 flex-1 rounded-lg text-base font-semibold capitalize ${
+              k === kind
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-surface text-muted'
             }`}
           >
-            {DAY_LABELS[i]}
+            {PLANS[k].title}
           </button>
         ))}
       </div>
 
       {plan && (
         <>
-          <div>
-            <h2 className="text-lg font-semibold">{plan.title}</h2>
-            {plan.weekday !== todayWeekday && (
-              <p className="text-xs text-muted">
-                Not today's plan — logs will still go to today's journal.
-              </p>
+          <div className="flex flex-col gap-3">
+            {plan.groups.map((group, g) =>
+              isSuperset(group) ? (
+                <div
+                  key={group.exercises[0].name}
+                  className="flex flex-col gap-2 rounded-xl border border-accent/40 p-2"
+                >
+                  <div className="px-2 text-xs font-semibold uppercase tracking-wide text-accent">
+                    Superset · rest{' '}
+                    {group.exercises[group.exercises.length - 1].restSec}s after
+                    each round
+                  </div>
+                  {group.exercises.map((e, m) => (
+                    <ExerciseRow
+                      key={e.name}
+                      exercise={e}
+                      onStart={() => start(flatIndexOf(g, m))}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <ExerciseRow
+                  key={group.exercises[0].name}
+                  exercise={group.exercises[0]}
+                  onStart={() => start(flatIndexOf(g, 0))}
+                />
+              ),
             )}
           </div>
-
-          <ul className="flex flex-col gap-2">
-            {plan.exercises.map((e, i) => (
-              <li key={e.name}>
-                <button
-                  type="button"
-                  onClick={() => start(i)}
-                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-left active:bg-surface-raised"
-                >
-                  <div>
-                    <div className="font-medium">{e.name}</div>
-                    <div className="text-xs text-muted">
-                      {e.sets} × {e.reps} reps · rest {e.restSec}s
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold text-accent">
-                    Start here
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
 
           <button
             type="button"

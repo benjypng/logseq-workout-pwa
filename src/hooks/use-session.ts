@@ -42,7 +42,15 @@ export function useSession(): SessionApi {
     void (async () => {
       const stored = await loadActiveSession(await getDb())
       if (!cancelled) {
-        if (stored && stored.phase !== 'complete') setSession(stored)
+        if (stored && stored.phase !== 'complete') {
+          setSession({
+            ...stored,
+            exercises: stored.exercises.map((e, i) => ({
+              ...e,
+              group: e.group ?? i,
+            })),
+          })
+        }
         setRestoring(false)
       }
     })()

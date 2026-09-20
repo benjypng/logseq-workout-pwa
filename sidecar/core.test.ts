@@ -1,16 +1,22 @@
-import { createHandler, type RunLogseq } from './core'
+import {
+  buildEntry,
+  createHandler,
+  journalTitle,
+  type ReadJournal,
+  spaceTables,
+  type WriteJournal,
+} from './core'
 import { describe, expect, test } from 'bun:test'
 
-const CONTENT = '**Monday — chest and triceps**\n| Exercise | Reps |'
+const CONTENT = '**Gym**\n\nbench press:: 35/10, 35/8, 35/8'
 
-function makeRun(calls: string[][], queryResult: unknown[] = []): RunLogseq {
-  return async (args) => {
-    calls.push(args)
-    if (args[0] === 'query') return { data: { result: queryResult } }
-    if (args[0] === 'upsert' && args[1] === 'tag')
-      return { data: { result: [1] } }
-    return { data: { result: [42] } }
+function makeVault(initial: Record<string, string> = {}) {
+  const files: Record<string, string> = { ...initial }
+  const readJournal: ReadJournal = async (page) => files[page] ?? null
+  const writeJournal: WriteJournal = async (page, content) => {
+    files[page] = content
   }
+  return { files, readJournal, writeJournal }
 }
 
 function post(body: unknown): Request {
@@ -21,83 +27,91 @@ function post(body: unknown): Request {
 }
 
 describe('sidecar handler', () => {
-  test('GET /graph returns the graph name', async () => {
-    const handle = createHandler({ graph: 'g', runLogseq: makeRun([]) })
+  test('GET /graph returns the vault name', async () => {
+    const { readJournal, writeJournal } = makeVault()
+    const handle = createHandler({
+      vault: '/home/unraid/obsidian/vault',
+      readJournal,
+      writeJournal,
+    })
     const res = await handle(new Request('http://sidecar/graph'))
-    expect(await res.json()).toEqual({ name: 'g' })
+    expect(await res.json()).toEqual({ name: 'vault' })
   })
 
-  test('POST /workout ensures the tag, then upserts a tagged block', async () => {
-    const calls: string[][] = []
-    const handle = createHandler({ graph: 'g', runLogseq: makeRun(calls) })
+  test('POST /workout creates the journal page with frontmatter', async () => {
+    const { files, readJournal, writeJournal } = makeVault()
+    const handle = createHandler({ vault: '/v', readJournal, writeJournal })
     const res = await handle(post({ page: '2026-07-21', content: CONTENT }))
-    expect(await res.json()).toEqual({ id: 42 })
-    expect(calls[0]).toEqual(['upsert', 'tag', '--name', 'Workout'])
-    expect(calls[1][0]).toBe('query')
-    expect(calls[2]).toEqual([
-      'upsert',
-      'block',
-      '--content',
-      CONTENT,
-      '--target-page',
-      '2026-07-21',
-      '--update-tags',
-      '["Workout"]',
-    ])
+    expect(await res.json()).toEqual({ page: '2026-07-21', created: true })
+
+    const written = files['2026-07-21']
+    expect(written).toContain('title: "Jul 21st, 2026"')
+    expect(written).toContain('created: "2026-07-21"')
+    expect(written).toContain('**Gym**')
+    expect(written).toContain('bench press:: 35/10, 35/8, 35/8')
   })
 
-  test('ensures the tag only once per process', async () => {
-    const calls: string[][] = []
-    const handle = createHandler({ graph: 'g', runLogseq: makeRun(calls) })
-    await handle(post({ page: '2026-07-21', content: CONTENT }))
-    await handle(post({ page: '2026-07-22', content: CONTENT }))
-    const tagCalls = calls.filter((c) => c[1] === 'tag')
-    expect(tagCalls).toHaveLength(1)
-  })
-
-  test('dedupes an identical block already on the page', async () => {
-    const calls: string[][] = []
-    const existing = [
-      [
-        {
-          'block/title': CONTENT,
-          'block/tags': [{ 'block/title': 'Workout' }],
-        },
-      ],
-    ]
-    const handle = createHandler({
-      graph: 'g',
-      runLogseq: makeRun(calls, existing),
+  test('POST /workout appends to an existing journal page', async () => {
+    const existing = '---\ntitle: "Jul 21st, 2026"\n---\n\nEarlier note.\n'
+    const { files, readJournal, writeJournal } = makeVault({
+      '2026-07-21': existing,
     })
+    const handle = createHandler({ vault: '/v', readJournal, writeJournal })
+    await handle(post({ page: '2026-07-21', content: CONTENT }))
+
+    const written = files['2026-07-21']
+    expect(written).toContain('Earlier note.')
+    expect(written.indexOf('Earlier note.')).toBeLessThan(
+      written.indexOf('**Gym**'),
+    )
+  })
+
+  test('POST /workout is idempotent for the same session', async () => {
+    const { files, readJournal, writeJournal } = makeVault()
+    const handle = createHandler({ vault: '/v', readJournal, writeJournal })
+    await handle(post({ page: '2026-07-21', content: CONTENT }))
     const res = await handle(post({ page: '2026-07-21', content: CONTENT }))
+
     expect(await res.json()).toEqual({ deduped: true })
-    expect(calls.some((c) => c[1] === 'block')).toBe(false)
+    const occurrences = files['2026-07-21'].split('**Gym**').length - 1
+    expect(occurrences).toBe(1)
   })
 
-  test('dedupe queries the journal page by its display name', async () => {
-    const calls: string[][] = []
-    const handle = createHandler({ graph: 'g', runLogseq: makeRun(calls) })
-    await handle(post({ page: '2026-07-21', content: CONTENT }))
-    const query = calls.find((c) => c[0] === 'query')
-    expect(query?.[4]).toBe('["jul 21st, 2026"]')
+  test('POST /workout rejects a bad page or empty content', async () => {
+    const { readJournal, writeJournal } = makeVault()
+    const handle = createHandler({ vault: '/v', readJournal, writeJournal })
+    expect(
+      (await handle(post({ page: 'nope', content: CONTENT }))).status,
+    ).toBe(400)
+    expect(
+      (await handle(post({ page: '2026-07-21', content: '  ' }))).status,
+    ).toBe(400)
+  })
+})
+
+describe('markdown shaping', () => {
+  test('spaceTables inserts a blank line before a table header', () => {
+    const spaced = spaceTables('**Title**\n| A | B |\n|---|---|\n| 1 | 2 |')
+    expect(spaced).toBe('**Title**\n\n| A | B |\n|---|---|\n| 1 | 2 |')
   })
 
-  test('rejects a non-date page and empty content with 400', async () => {
-    const handle = createHandler({ graph: 'g', runLogseq: makeRun([]) })
-    const bad = await handle(post({ page: 'not-a-date', content: CONTENT }))
-    expect(bad.status).toBe(400)
-    const empty = await handle(post({ page: '2026-07-21', content: ' ' }))
-    expect(empty.status).toBe(400)
+  test('spaceTables leaves an already-spaced table alone', () => {
+    const input = '**Title**\n\n| A | B |\n|---|---|\n| 1 | 2 |'
+    expect(spaceTables(input)).toBe(input)
   })
 
-  test('a CLI failure returns 500', async () => {
-    const handle = createHandler({
-      graph: 'g',
-      runLogseq: async () => {
-        throw new Error('boom')
-      },
-    })
-    const res = await handle(post({ page: '2026-07-21', content: CONTENT }))
-    expect(res.status).toBe(500)
+  test('spaceTables ignores pipes inside code fences', () => {
+    const input = '```\n| not | a table |\n|---|---|\n```'
+    expect(spaceTables(input)).toBe(input)
+  })
+
+  test('buildEntry trims and spaces tables without adding a tag', () => {
+    expect(buildEntry(`  ${CONTENT}  `)).toBe(CONTENT)
+  })
+
+  test('journalTitle uses Logseq-style ordinals', () => {
+    expect(journalTitle('2026-07-21')).toBe('Jul 21st, 2026')
+    expect(journalTitle('2026-07-11')).toBe('Jul 11th, 2026')
+    expect(journalTitle('2026-07-03')).toBe('Jul 3rd, 2026')
   })
 })

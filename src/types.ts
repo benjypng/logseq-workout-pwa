@@ -5,10 +5,18 @@ export interface PlannedExercise {
   restSec: number
 }
 
-export interface DayPlan {
-  weekday: number
-  title: string
+export interface ExerciseGroup {
+  muscles?: string
   exercises: PlannedExercise[]
+}
+
+export interface DayPlan {
+  title: string
+  groups: ExerciseGroup[]
+}
+
+export function isSuperset(group: ExerciseGroup): boolean {
+  return group.exercises.length > 1
 }
 
 export interface SetLog {
@@ -18,6 +26,7 @@ export interface SetLog {
 }
 
 export interface SessionExercise extends PlannedExercise {
+  group: number
   logs: SetLog[]
 }
 

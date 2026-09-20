@@ -22,7 +22,10 @@ export function SetCard({ session, dispatch }: Props) {
         <div className="text-xl font-bold">{exercise.name}</div>
         <div className="mt-1 text-sm text-muted">
           Set {session.activeSet + 1} of {exercise.sets} · target{' '}
-          {exercise.reps} reps · rest {exercise.restSec}s
+          {exercise.reps} reps ·{' '}
+          {exercise.restSec > 0
+            ? `rest ${exercise.restSec}s`
+            : 'straight into next'}
         </div>
       </div>
 
@@ -71,7 +74,9 @@ export function SetCard({ session, dispatch }: Props) {
           onClick={logSet}
           className="h-14 rounded-lg bg-accent text-lg font-bold text-accent-foreground active:opacity-80"
         >
-          Log set · rest {exercise.restSec}s
+          {exercise.restSec > 0
+            ? `Log set · rest ${exercise.restSec}s`
+            : 'Log set · next exercise'}
         </button>
       ) : (
         <div className="flex gap-3">

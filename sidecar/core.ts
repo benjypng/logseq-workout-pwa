@@ -1,11 +1,14 @@
-export type RunLogseq = (args: string[]) => Promise<unknown>
+export type ReadJournal = (page: string) => Promise<string | null>
+export type WriteJournal = (page: string, content: string) => Promise<void>
 
 export interface HandlerDeps {
-  graph: string
-  runLogseq: RunLogseq
+  vault: string
+  readJournal: ReadJournal
+  writeJournal: WriteJournal
 }
 
-const WORKOUT_TAG = 'Workout'
+const TABLE_ROW = /^\s*\|.*\|\s*$/
+const TABLE_DELIM = /^\s*\|?[\s:|-]*-[\s:|-]*\|[\s:|-]*$/
 
 function ok(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -20,37 +23,12 @@ function fail(status: number, message: string): Response {
   })
 }
 
-interface PageBlock {
-  'block/title'?: string
-  'block/tags'?: { 'block/title'?: string }[]
+export function vaultName(vault: string): string {
+  const parts = vault.replace(/\/+$/, '').split('/')
+  return parts[parts.length - 1] || vault
 }
 
-async function hasDuplicateOnPage(
-  runLogseq: RunLogseq,
-  page: string,
-  content: string,
-): Promise<boolean> {
-  const edn = `[:find (pull ?b [:block/title {:block/tags [:block/title]}]) :in $ ?page :where [?p :block/name ?page] [?b :block/page ?p]]`
-  try {
-    const raw = (await runLogseq([
-      'query',
-      '--query',
-      edn,
-      '--inputs',
-      JSON.stringify([page.toLowerCase()]),
-    ])) as { data?: { result?: unknown[] } } | null
-    const blocks = (raw?.data?.result ?? []).flat() as PageBlock[]
-    return blocks.some(
-      (b) =>
-        b['block/title'] === content &&
-        (b['block/tags'] ?? []).some((t) => t['block/title'] === WORKOUT_TAG),
-    )
-  } catch {
-    return false
-  }
-}
-
-function journalPageName(dateISO: string): string {
+export function journalTitle(dateISO: string): string {
   const [y, m, d] = dateISO.split('-').map(Number)
   const date = new Date(y, m - 1, d)
   const month = date.toLocaleString('en-US', { month: 'short' })
@@ -65,24 +43,74 @@ function journalPageName(dateISO: string): string {
   return `${month} ${d}${suffix}, ${y}`
 }
 
-export function createHandler({ graph, runLogseq }: HandlerDeps) {
-  let tagEnsured: Promise<void> | null = null
-  const ensureWorkoutTag = () => {
-    tagEnsured ??= runLogseq(['upsert', 'tag', '--name', WORKOUT_TAG]).then(
-      () => undefined,
-      (err) => {
-        tagEnsured = null
-        throw err
-      },
-    )
-    return tagEnsured
+export function spaceTables(text: string): string {
+  const lines = text.split('\n')
+  const out: string[] = []
+  let fence = false
+  let inTable = false
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmed = line.trimStart()
+
+    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+      fence = !fence
+      inTable = false
+      out.push(line)
+      continue
+    }
+    if (fence) {
+      out.push(line)
+      continue
+    }
+
+    const row = TABLE_ROW.test(line)
+    const next = i + 1 < lines.length ? lines[i + 1] : ''
+
+    if (!inTable && row && TABLE_DELIM.test(next)) {
+      if (out.length > 0 && out[out.length - 1].trim() !== '') out.push('')
+      inTable = true
+    } else if (inTable && !row) {
+      if (line.trim() !== '') out.push('')
+      inTable = false
+    }
+
+    out.push(line)
   }
 
+  return out.join('\n')
+}
+
+export function buildEntry(content: string): string {
+  return spaceTables(content.trim())
+}
+
+export function newJournalPage(dateISO: string, entry: string): string {
+  return `${[
+    '---',
+    `title: "${journalTitle(dateISO)}"`,
+    `created: "${dateISO}"`,
+    `updated: "${dateISO}"`,
+    '---',
+    '',
+    entry,
+  ].join('\n')}\n`
+}
+
+export function appendEntry(existing: string, entry: string): string {
+  return `${existing.replace(/\s+$/, '')}\n\n${entry}\n`
+}
+
+export function createHandler({
+  vault,
+  readJournal,
+  writeJournal,
+}: HandlerDeps) {
   return async function handle(req: Request): Promise<Response> {
     const url = new URL(req.url)
     try {
       if (req.method === 'GET' && url.pathname === '/graph') {
-        return ok({ name: graph })
+        return ok({ name: vaultName(vault) })
       }
 
       if (req.method === 'POST' && url.pathname === '/workout') {
@@ -96,24 +124,19 @@ export function createHandler({ graph, runLogseq }: HandlerDeps) {
         if (!content || content.trim() === '') {
           return fail(400, 'missing content')
         }
-        await ensureWorkoutTag()
-        if (
-          await hasDuplicateOnPage(runLogseq, journalPageName(page), content)
-        ) {
+
+        const entry = buildEntry(content)
+        const existing = await readJournal(page)
+        if (existing !== null && existing.includes(entry)) {
           return ok({ deduped: true })
         }
-        const created = (await runLogseq([
-          'upsert',
-          'block',
-          '--content',
-          content,
-          '--target-page',
-          page,
-          '--update-tags',
-          `["${WORKOUT_TAG}"]`,
-        ])) as { data?: { result?: unknown[] } } | null
-        const id = created?.data?.result?.[0] as number | undefined
-        return ok({ id: id ?? null })
+
+        const next =
+          existing === null
+            ? newJournalPage(page, entry)
+            : appendEntry(existing, entry)
+        await writeJournal(page, next)
+        return ok({ page, created: existing === null })
       }
 
       return fail(404, 'not found')

@@ -1,5 +1,4 @@
-import { WEEKLY_PLAN } from '../plan'
-import type { Session } from '../types'
+import type { DayPlan, Session } from '../types'
 import {
   createSession,
   isSessionDone,
@@ -10,8 +9,46 @@ import { describe, expect, test } from 'bun:test'
 
 const NOW = 1_000_000
 
+export const TEST_PLAN: DayPlan = {
+  title: 'Monday — chest and triceps',
+  groups: [
+    {
+      exercises: [
+        { name: 'Smith incline press', reps: '8–12', sets: 4, restSec: 90 },
+      ],
+    },
+    {
+      exercises: [
+        { name: 'Flat dumbbell press', reps: '8–12', sets: 4, restSec: 90 },
+      ],
+    },
+    {
+      exercises: [
+        { name: 'Tricep pushdown', reps: '10–15', sets: 3, restSec: 75 },
+      ],
+    },
+  ],
+}
+
+const SUPERSET_PLAN: DayPlan = {
+  title: 'Monday — priority',
+  groups: [
+    {
+      exercises: [
+        { name: 'Incline press', reps: '8–12', sets: 2, restSec: 0 },
+        { name: 'Dumbbell row', reps: '8–12', sets: 2, restSec: 90 },
+      ],
+    },
+    {
+      exercises: [
+        { name: 'Tricep pushdown', reps: '10–15', sets: 2, restSec: 75 },
+      ],
+    },
+  ],
+}
+
 function newSession(startExercise = 0): Session {
-  return createSession(WEEKLY_PLAN[0], '2026-07-21', startExercise, NOW)
+  return createSession(TEST_PLAN, '2026-07-21', startExercise, NOW)
 }
 
 function logAndRest(s: Session, weight = '8', reps = '10'): Session {
@@ -37,7 +74,7 @@ describe('createSession', () => {
   })
 
   test('prefills first-set weight from stored weights', () => {
-    const s = createSession(WEEKLY_PLAN[0], '2026-07-21', 0, NOW, {
+    const s = createSession(TEST_PLAN, '2026-07-21', 0, NOW, {
       'Smith incline press': '40',
     })
     expect(s.exercises[0].logs[0].weight).toBe('40')
@@ -107,6 +144,55 @@ describe('completion', () => {
     s = sessionReducer(s, { type: 'finish-early' })
     expect(s.phase).toBe('complete')
     expect(s.exercises[0].logs[0].done).toBe(true)
+  })
+})
+
+describe('supersets', () => {
+  test('a zero-rest member hands off to its partner with no resting phase', () => {
+    let s = createSession(SUPERSET_PLAN, '2026-07-21', 0, NOW)
+    s = sessionReducer(s, { type: 'complete-set', now: NOW })
+    expect(s.phase).toBe('set')
+    expect(s.activeExercise).toBe(1)
+    expect(s.activeSet).toBe(0)
+    expect(s.exercises[0].logs[0].done).toBe(true)
+  })
+
+  test('after the partner rests, the next round returns to the first member', () => {
+    let s = createSession(SUPERSET_PLAN, '2026-07-21', 0, NOW)
+    s = sessionReducer(s, { type: 'complete-set', now: NOW })
+    s = sessionReducer(s, { type: 'complete-set', now: NOW })
+    expect(s.phase).toBe('resting')
+    expect(s.restTotalSec).toBe(90)
+    s = sessionReducer(s, { type: 'rest-elapsed' })
+    expect(s.activeExercise).toBe(0)
+    expect(s.activeSet).toBe(1)
+  })
+
+  test('finishing the superset moves on to the next group', () => {
+    let s = createSession(SUPERSET_PLAN, '2026-07-21', 0, NOW)
+    for (let round = 0; round < 2; round++) {
+      s = sessionReducer(s, { type: 'complete-set', now: NOW })
+      s = sessionReducer(s, { type: 'complete-set', now: NOW })
+      s = sessionReducer(s, { type: 'rest-elapsed' })
+    }
+    expect(s.activeExercise).toBe(2)
+    expect(s.activeSet).toBe(0)
+  })
+
+  test('starting from the partner still round-robins through the pair', () => {
+    let s = createSession(SUPERSET_PLAN, '2026-07-21', 1, NOW)
+    s = sessionReducer(s, { type: 'complete-set', now: NOW })
+    expect(s.phase).toBe('resting')
+    s = sessionReducer(s, { type: 'rest-elapsed' })
+    expect(s.activeExercise).toBe(0)
+    expect(s.activeSet).toBe(0)
+  })
+
+  test('nextTarget during a superset rest points at the first member of the next round', () => {
+    let s = createSession(SUPERSET_PLAN, '2026-07-21', 0, NOW)
+    s = sessionReducer(s, { type: 'complete-set', now: NOW })
+    s = sessionReducer(s, { type: 'complete-set', now: NOW })
+    expect(nextTarget(s)).toEqual({ exercise: 0, set: 1 })
   })
 })
 

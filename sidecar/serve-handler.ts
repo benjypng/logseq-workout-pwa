@@ -7,6 +7,22 @@ export interface ServeHandlerDeps {
   distDir: string
 }
 
+function cacheControlFor(pathname: string): string | null {
+  if (pathname.startsWith('/assets/')) {
+    return 'public, max-age=31536000, immutable'
+  }
+  if (
+    pathname === '/' ||
+    pathname === '/index.html' ||
+    pathname === '/sw.js' ||
+    pathname === '/registerSW.js' ||
+    pathname === '/manifest.webmanifest'
+  ) {
+    return 'no-cache'
+  }
+  return null
+}
+
 export function createServeHandler({ apiHandler, distDir }: ServeHandlerDeps) {
   const root = resolve(distDir)
   const indexFile = join(root, 'index.html')
@@ -32,12 +48,18 @@ export function createServeHandler({ apiHandler, distDir }: ServeHandlerDeps) {
     if (candidate === root || candidate.startsWith(root + sep)) {
       const file = Bun.file(candidate === root ? indexFile : candidate)
       if (await file.exists()) {
-        return new Response(file)
+        const cacheControl = cacheControlFor(url.pathname)
+        return new Response(file, {
+          headers: cacheControl ? { 'Cache-Control': cacheControl } : undefined,
+        })
       }
     }
 
     return new Response(Bun.file(indexFile), {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
     })
   }
 }

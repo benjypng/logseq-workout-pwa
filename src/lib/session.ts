@@ -17,14 +17,17 @@ export function createSession(
   now: number,
   prefillWeights: Record<string, string> = {},
 ): Session {
-  const exercises: SessionExercise[] = plan.exercises.map((e) => ({
-    ...e,
-    logs: Array.from({ length: e.sets }, (_, i) => ({
-      weight: i === 0 ? (prefillWeights[e.name] ?? '') : '',
-      reps: '',
-      done: false,
+  const exercises: SessionExercise[] = plan.groups.flatMap((group, g) =>
+    group.exercises.map((e) => ({
+      ...e,
+      group: g,
+      logs: Array.from({ length: e.sets }, (_, i) => ({
+        weight: i === 0 ? (prefillWeights[e.name] ?? '') : '',
+        reps: '',
+        done: false,
+      })),
     })),
-  }))
+  )
   return {
     id: crypto.randomUUID(),
     startedAt: now,
@@ -45,14 +48,32 @@ interface Target {
   set: number
 }
 
+function firstUndoneInGroup(s: Session, group: number): Target | null {
+  const members = s.exercises
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => e.group === group)
+  const maxSets = Math.max(...members.map(({ e }) => e.sets), 0)
+  for (let round = 0; round < maxSets; round++) {
+    for (const { e, i } of members) {
+      if (round < e.sets && !e.logs[round].done) {
+        return { exercise: i, set: round }
+      }
+    }
+  }
+  return null
+}
+
 export function nextTarget(s: Session): Target | null {
-  const order = s.exercises.map((_, i) => i)
-  const rotated = order
-    .slice(s.activeExercise)
-    .concat(order.slice(0, s.activeExercise))
-  for (const exercise of rotated) {
-    const set = s.exercises[exercise].logs.findIndex((l) => !l.done)
-    if (set !== -1) return { exercise, set }
+  const groupIds: number[] = []
+  for (const e of s.exercises) {
+    if (!groupIds.includes(e.group)) groupIds.push(e.group)
+  }
+  const activeGroup = s.exercises[s.activeExercise].group
+  const startAt = groupIds.indexOf(activeGroup)
+  const rotated = groupIds.slice(startAt).concat(groupIds.slice(0, startAt))
+  for (const group of rotated) {
+    const target = firstUndoneInGroup(s, group)
+    if (target) return target
   }
   return null
 }
@@ -61,33 +82,25 @@ export function isSessionDone(s: Session): boolean {
   return s.exercises.every((e) => e.logs.every((l) => l.done))
 }
 
-function withActiveLog(
+function withLogAt(
   s: Session,
+  target: Target,
   update: (
-    log: Session['exercises'][number]['logs'][number],
-  ) => Session['exercises'][number]['logs'][number],
+    log: SessionExercise['logs'][number],
+  ) => SessionExercise['logs'][number],
 ): Session {
   const exercises = s.exercises.map((e, ei) =>
-    ei === s.activeExercise
+    ei === target.exercise
       ? {
           ...e,
-          logs: e.logs.map((l, li) => (li === s.activeSet ? update(l) : l)),
+          logs: e.logs.map((l, li) => (li === target.set ? update(l) : l)),
         }
       : e,
   )
   return { ...s, exercises }
 }
 
-function advance(s: Session): Session {
-  const target = nextTarget(s)
-  if (!target) {
-    return {
-      ...s,
-      phase: 'complete',
-      restEndsAt: null,
-      setStarted: false,
-    }
-  }
+function moveTo(s: Session, target: Target): Session {
   const moved: Session = {
     ...s,
     activeExercise: target.exercise,
@@ -103,23 +116,36 @@ function advance(s: Session): Session {
       .reverse()
       .find((l) => l.weight !== '')
     if (prev)
-      return withActiveLog(moved, (l) => ({ ...l, weight: prev.weight }))
+      return withLogAt(moved, target, (l) => ({ ...l, weight: prev.weight }))
   }
   return moved
 }
 
+function advance(s: Session): Session {
+  const target = nextTarget(s)
+  if (!target) {
+    return { ...s, phase: 'complete', restEndsAt: null, setStarted: false }
+  }
+  return moveTo(s, target)
+}
+
 export function sessionReducer(s: Session, action: SessionAction): Session {
+  const active: Target = { exercise: s.activeExercise, set: s.activeSet }
   switch (action.type) {
     case 'input':
       if (s.phase !== 'set') return s
-      return withActiveLog(s, (l) => ({ ...l, [action.field]: action.value }))
+      return withLogAt(s, active, (l) => ({
+        ...l,
+        [action.field]: action.value,
+      }))
     case 'start-set':
       if (s.phase !== 'set') return s
       return { ...s, setStarted: true }
     case 'complete-set': {
       if (s.phase !== 'set') return s
-      const logged = withActiveLog(s, (l) => ({ ...l, done: true }))
+      const logged = withLogAt(s, active, (l) => ({ ...l, done: true }))
       const restSec = logged.exercises[logged.activeExercise].restSec
+      if (restSec <= 0) return advance(logged)
       return {
         ...logged,
         phase: 'resting',
@@ -144,14 +170,7 @@ export function sessionReducer(s: Session, action: SessionAction): Session {
       if (action.exercise < 0 || action.exercise >= s.exercises.length) return s
       const set = s.exercises[action.exercise].logs.findIndex((l) => !l.done)
       if (set === -1) return s
-      return advance({
-        ...s,
-        activeExercise: action.exercise,
-        activeSet: set,
-        phase: 'set',
-        setStarted: false,
-        restEndsAt: null,
-      })
+      return moveTo(s, { exercise: action.exercise, set })
     }
     case 'finish-early':
       return { ...s, phase: 'complete', restEndsAt: null, setStarted: false }
