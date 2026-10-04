@@ -28,21 +28,6 @@ export function vaultName(vault: string): string {
   return parts[parts.length - 1] || vault
 }
 
-export function journalTitle(dateISO: string): string {
-  const [y, m, d] = dateISO.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  const month = date.toLocaleString('en-US', { month: 'short' })
-  const suffix =
-    d % 10 === 1 && d !== 11
-      ? 'st'
-      : d % 10 === 2 && d !== 12
-        ? 'nd'
-        : d % 10 === 3 && d !== 13
-          ? 'rd'
-          : 'th'
-  return `${month} ${d}${suffix}, ${y}`
-}
-
 export function spaceTables(text: string): string {
   const lines = text.split('\n')
   const out: string[] = []
@@ -88,7 +73,6 @@ export function buildEntry(content: string): string {
 export function newJournalPage(dateISO: string, entry: string): string {
   return `${[
     '---',
-    `title: "${journalTitle(dateISO)}"`,
     `created: "${dateISO}"`,
     `updated: "${dateISO}"`,
     '---',

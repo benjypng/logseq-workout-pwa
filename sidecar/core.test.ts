@@ -1,7 +1,6 @@
 import {
   buildEntry,
   createHandler,
-  journalTitle,
   type ReadJournal,
   spaceTables,
   type WriteJournal,
@@ -53,14 +52,14 @@ describe('sidecar handler', () => {
     expect(await res.json()).toEqual({ page: '2026-07-21', created: true })
 
     const written = files['2026-07-21']
-    expect(written).toContain('title: "Jul 21st, 2026"')
+    expect(written).not.toContain('title:')
     expect(written).toContain('created: "2026-07-21"')
     expect(written).toContain('**Gym**')
     expect(written).toContain('bench press:: 35/10, 35/8, 35/8')
   })
 
   test('POST /workout appends to an existing journal page', async () => {
-    const existing = '---\ntitle: "Jul 21st, 2026"\n---\n\nEarlier note.\n'
+    const existing = '---\ncreated: "2026-07-21"\n---\n\nEarlier note.\n'
     const { files, readJournal, writeJournal } = makeVault({
       '2026-07-21': existing,
     })
@@ -115,11 +114,5 @@ describe('markdown shaping', () => {
 
   test('buildEntry trims and spaces tables without adding a tag', () => {
     expect(buildEntry(`  ${CONTENT}  `)).toBe(CONTENT)
-  })
-
-  test('journalTitle uses Logseq-style ordinals', () => {
-    expect(journalTitle('2026-07-21')).toBe('Jul 21st, 2026')
-    expect(journalTitle('2026-07-11')).toBe('Jul 11th, 2026')
-    expect(journalTitle('2026-07-03')).toBe('Jul 3rd, 2026')
   })
 })

@@ -26,7 +26,6 @@ frontmatter; a second session on the same day is appended below the first.
 
 ```markdown
 ---
-title: "Oct 3rd, 2026"
 created: "2026-10-03"
 updated: "2026-10-03"
 ---
