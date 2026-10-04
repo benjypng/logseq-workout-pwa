@@ -1,6 +1,7 @@
 import { CompleteView } from './components/complete-view'
 import { HomeView } from './components/home-view'
 import { SessionView } from './components/session-view'
+import { SignInBanner } from './components/sign-in-banner'
 import { useSession } from './hooks/use-session'
 import { useWakeLock } from './hooks/use-wake-lock'
 
@@ -17,19 +18,20 @@ export default function App() {
     )
   }
 
-  if (session && session.phase === 'complete') {
-    return <CompleteView session={session} onClose={() => void discard()} />
-  }
-
-  if (session) {
-    return (
-      <SessionView
-        session={session}
-        dispatch={dispatch}
-        onDiscard={() => void discard()}
-      />
-    )
-  }
-
-  return <HomeView onStart={start} />
+  return (
+    <>
+      <SignInBanner />
+      {session && session.phase === 'complete' ? (
+        <CompleteView session={session} onClose={() => void discard()} />
+      ) : session ? (
+        <SessionView
+          session={session}
+          dispatch={dispatch}
+          onDiscard={() => void discard()}
+        />
+      ) : (
+        <HomeView onStart={start} />
+      )}
+    </>
+  )
 }

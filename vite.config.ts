@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
         manifest: {
           name: 'Workout Log',
           short_name: 'Workout',
-          description: 'Gym session logger that writes to Logseq',
+          description: 'Gym session logger that writes to Obsidian',
           theme_color: '#faf7f2',
           background_color: '#faf7f2',
           display: 'standalone',

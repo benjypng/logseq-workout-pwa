@@ -7,8 +7,8 @@ interface Props {
 }
 
 export function CompleteView({ session, onClose }: Props) {
-  const { pending, flush } = useOutbox()
-  const isPending = pending.some((op) => op.id === session.id)
+  const { results, lastError, flush } = useOutbox()
+  const result = results[session.id]
 
   const totalSets = session.exercises.reduce(
     (n, e) => n + e.logs.filter((l) => l.done).length,
@@ -50,24 +50,33 @@ export function CompleteView({ session, onClose }: Props) {
 
       <div
         className={`rounded-lg border px-4 py-3 text-sm ${
-          isPending
-            ? 'border-border bg-surface text-muted'
-            : 'border-positive/40 bg-surface text-positive'
+          result === 'sent'
+            ? 'border-positive/40 bg-surface text-positive'
+            : 'border-border bg-surface text-muted'
         }`}
       >
-        {isPending ? (
-          <div className="flex items-center justify-between">
-            <span>Waiting to sync to Logseq…</span>
-            <button
-              type="button"
-              onClick={() => void flush()}
-              className="font-semibold text-accent underline"
-            >
-              Retry
-            </button>
-          </div>
+        {result === 'sent' ? (
+          <span>Saved to today's workout note in Obsidian ✓</span>
+        ) : result === 'dropped' ? (
+          <span>The server rejected this session, so it was not saved.</span>
         ) : (
-          <span>Synced to today's journal in Logseq ✓</span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <span>Saving to Obsidian…</span>
+              <button
+                type="button"
+                onClick={() => void flush()}
+                className="font-semibold text-accent underline"
+              >
+                Retry
+              </button>
+            </div>
+            {lastError && (
+              <span className="text-xs text-faint">
+                Last attempt failed: {lastError}
+              </span>
+            )}
+          </div>
         )}
       </div>
 

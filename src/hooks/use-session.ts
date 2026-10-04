@@ -82,13 +82,13 @@ export function useSession(): SessionApi {
           content,
           synced: false,
         })
-        await clearActiveSession(db)
         await enqueue({
           id: finished.id,
           ts: Date.now(),
           page: finished.dateISO,
           content,
         })
+        await clearActiveSession(db)
       })()
     },
     [getDb, enqueue],

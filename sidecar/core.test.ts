@@ -38,6 +38,14 @@ describe('sidecar handler', () => {
     expect(await res.json()).toEqual({ name: 'vault' })
   })
 
+  test('GET /reauth redirects back to the app', async () => {
+    const { readJournal, writeJournal } = makeVault()
+    const handle = createHandler({ vault: '/v', readJournal, writeJournal })
+    const res = await handle(new Request('http://sidecar/reauth'))
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('/')
+  })
+
   test('POST /workout creates the journal page with frontmatter', async () => {
     const { files, readJournal, writeJournal } = makeVault()
     const handle = createHandler({ vault: '/v', readJournal, writeJournal })

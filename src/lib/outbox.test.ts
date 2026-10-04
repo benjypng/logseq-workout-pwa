@@ -42,6 +42,7 @@ describe('flushOutbox', () => {
       throw new Error('offline')
     })
     expect(result.sent).toEqual([])
+    expect(result.error).toBe('offline')
     expect(await listOps(db)).toHaveLength(2)
   })
 

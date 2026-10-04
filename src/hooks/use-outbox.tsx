@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react'
 
-import { sendWorkoutOp } from '../api'
+import { AuthRequiredError, sendWorkoutOp } from '../api'
 import {
   enqueueOp,
   listOps,
@@ -20,8 +20,13 @@ import {
 import { flushOutbox } from '../lib/outbox'
 import type { WorkoutOp } from '../types'
 
+export type SyncResult = 'sent' | 'dropped'
+
 interface OutboxValue {
   pending: WorkoutOp[]
+  results: Record<string, SyncResult>
+  lastError: string | null
+  authRequired: boolean
   enqueue: (op: WorkoutOp) => Promise<void>
   flush: () => Promise<void>
   getDb: () => Promise<WorkoutDB>
@@ -38,6 +43,9 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
     return dbRef.current
   }, [])
   const [pending, setPending] = useState<WorkoutOp[]>([])
+  const [results, setResults] = useState<Record<string, SyncResult>>({})
+  const [lastError, setLastError] = useState<string | null>(null)
+  const [authRequired, setAuthRequired] = useState(false)
   const flushing = useRef(false)
 
   const refresh = useCallback(async () => {
@@ -49,10 +57,31 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
     flushing.current = true
     try {
       const db = await getDb()
-      const { sent } = await flushOutbox(db, sendWorkoutOp)
+      let authFailed = false
+      const send = async (op: WorkoutOp) => {
+        try {
+          await sendWorkoutOp(op)
+        } catch (err) {
+          if (err instanceof AuthRequiredError) authFailed = true
+          throw err
+        }
+      }
+      const { sent, dropped, error } = await flushOutbox(db, send)
+      setAuthRequired(authFailed)
       for (const id of sent) {
         await markSessionSynced(db, id)
       }
+      setLastError(error)
+      if (sent.length > 0 || dropped.length > 0) {
+        setResults((prev) => {
+          const next = { ...prev }
+          for (const id of sent) next[id] = 'sent'
+          for (const id of dropped) next[id] = 'dropped'
+          return next
+        })
+      }
+    } catch (err) {
+      setLastError(err instanceof Error ? err.message : String(err))
     } finally {
       flushing.current = false
       await refresh()
@@ -85,8 +114,16 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo(
-    () => ({ pending, enqueue, flush, getDb }),
-    [pending, enqueue, flush, getDb],
+    () => ({
+      pending,
+      results,
+      lastError,
+      authRequired,
+      enqueue,
+      flush,
+      getDb,
+    }),
+    [pending, results, lastError, authRequired, enqueue, flush, getDb],
   )
 
   return (

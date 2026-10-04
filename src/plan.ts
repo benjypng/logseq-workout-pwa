@@ -8,14 +8,14 @@ export const PLANS: Record<WorkoutKind, DayPlan> = {
     groups: [
       {
         exercises: [
-          { name: 'bench press', reps: '8–12', sets: 3, restSec: 150 },
-          { name: 'pulldown', reps: '8–12', sets: 3, restSec: 150 },
+          { name: 'bench press', reps: '8–12', sets: 2, restSec: 150 },
+          { name: 'pulldown', reps: '8–12', sets: 2, restSec: 150 },
         ],
       },
       {
         exercises: [
-          { name: 'shoulder press', reps: '8–12', sets: 3, restSec: 150 },
-          { name: 'rows', reps: '8–12', sets: 3, restSec: 150 },
+          { name: 'shoulder press', reps: '8–12', sets: 2, restSec: 150 },
+          { name: 'rows', reps: '8–12', sets: 2, restSec: 150 },
         ],
       },
       {
@@ -31,20 +31,20 @@ export const PLANS: Record<WorkoutKind, DayPlan> = {
     groups: [
       {
         exercises: [
-          { name: 'pull ups', reps: '5–8', sets: 3, restSec: 90 },
-          { name: 'squats', reps: '5–8', sets: 3, restSec: 90 },
+          { name: 'pull ups', reps: '5–8', sets: 2, restSec: 90 },
+          { name: 'squats', reps: '5–8', sets: 2, restSec: 90 },
         ],
       },
       {
         exercises: [
-          { name: 'dips', reps: '5–8', sets: 3, restSec: 90 },
-          { name: 'splits', reps: '8–12 per leg', sets: 3, restSec: 90 },
+          { name: 'dips', reps: '5–8', sets: 2, restSec: 90 },
+          { name: 'splits', reps: '8–12 per leg', sets: 2, restSec: 90 },
         ],
       },
       {
         exercises: [
-          { name: 'rows', reps: '5–8', sets: 3, restSec: 90 },
-          { name: 'push ups', reps: '5–8', sets: 3, restSec: 90 },
+          { name: 'rows', reps: '5–8', sets: 2, restSec: 90 },
+          { name: 'push ups', reps: '5–8', sets: 2, restSec: 90 },
         ],
       },
     ],

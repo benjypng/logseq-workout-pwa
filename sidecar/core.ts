@@ -113,6 +113,10 @@ export function createHandler({
         return ok({ name: vaultName(vault) })
       }
 
+      if (req.method === 'GET' && url.pathname === '/reauth') {
+        return new Response(null, { status: 302, headers: { Location: '/' } })
+      }
+
       if (req.method === 'POST' && url.pathname === '/workout') {
         const { page, content } = (await req.json()) as {
           page?: string

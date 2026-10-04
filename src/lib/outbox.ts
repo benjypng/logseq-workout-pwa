@@ -9,6 +9,7 @@ function isDroppable(err: unknown): boolean {
 export interface FlushResult {
   sent: string[]
   dropped: string[]
+  error: string | null
 }
 
 export async function flushOutbox(
@@ -18,6 +19,7 @@ export async function flushOutbox(
   const pending = await listOps(db)
   const sent: string[] = []
   const dropped: string[] = []
+  let error: string | null = null
   for (const op of pending) {
     try {
       await send(op)
@@ -27,10 +29,11 @@ export async function flushOutbox(
         dropped.push(op.id)
         continue
       }
+      error = err instanceof Error ? err.message : String(err)
       break
     }
     await deleteOp(db, op.id)
     sent.push(op.id)
   }
-  return { sent, dropped }
+  return { sent, dropped, error }
 }
